@@ -23,8 +23,7 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
             amount_ml INTEGER,
-            feeding_type TEXT,
-            notes TEXT
+            feeding_type TEXT
         )
     ''')
     conn.commit()
@@ -34,14 +33,13 @@ def init_db():
 init_db()
 
 @mcp.tool()
-def record_feeding(amount_ml: int, feeding_type: str = "formula", notes: str = "", timestamp: str = "") -> str:
+def record_feeding(amount_ml: int, feeding_type: str = "formula", timestamp: str = "") -> str:
     """
     Record a feeding event.
     
     Args:
         amount_ml: The amount of milk in milliliters.
         feeding_type: The type of feeding (e.g., 'formula', 'breast_milk'). Default is 'formula'.
-        notes: Any additional notes about the feeding.
         timestamp: Optional. The time of feeding in 'YYYY-MM-DD HH:MM:SS' format. 
                    If not provided, defaults to current Beijing Time (UTC+8).
     """
@@ -53,9 +51,11 @@ def record_feeding(amount_ml: int, feeding_type: str = "formula", notes: str = "
         # UTC+8 calculation manually to avoid timezone dependency issues
         beijing_time = datetime.datetime.utcnow() + datetime.timedelta(hours=8)
         timestamp = beijing_time.strftime('%Y-%m-%d %H:%M:%S')
-        
-    c.execute("INSERT INTO feedings (timestamp, amount_ml, feeding_type, notes) VALUES (?, ?, ?, ?)",
-              (timestamp, amount_ml, feeding_type, notes))
+
+    c.execute(
+        "INSERT INTO feedings (timestamp, amount_ml, feeding_type) VALUES (?, ?, ?)",
+        (timestamp, amount_ml, feeding_type),
+    )
     conn.commit()
     conn.close()
     
@@ -112,7 +112,10 @@ def get_recent_feedings(limit: int = 5) -> List[dict]:
     conn.row_factory = sqlite3.Row  # To return dict-like objects
     c = conn.cursor()
     
-    c.execute('SELECT * FROM feedings ORDER BY timestamp DESC LIMIT ?', (limit,))
+    c.execute(
+        'SELECT id, timestamp, amount_ml, feeding_type FROM feedings ORDER BY timestamp DESC LIMIT ?',
+        (limit,),
+    )
     rows = c.fetchall()
     
     feedings = []

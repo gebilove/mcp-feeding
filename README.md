@@ -9,7 +9,7 @@ A specialized MCP (Model Context Protocol) server for tracking baby feeding logs
 
 ## Features | 特性
 
-- 🍼 **Smart Recording**: Log feeding amount, type (formula/breast milk), and notes | 智能记录：记录喂奶量、类型（配方奶/母乳）及备注
+- 🍼 **Smart Recording**: Log feeding amount and type (formula/breast milk) | 智能记录：记录喂奶量及类型（配方奶/母乳）
 - ⏰ **Natural Language Backfill**: Support recording past events (e.g., "fed 150ml last night at 10pm") | 自然语言补录：支持记录过去的时间点
 - 📊 **Daily Analysis**: Get instant summary of today's total volume, count, and last feeding time (Beijing Time) | 每日分析：即时获取今日（北京时间）的总量、次数和上次喂奶时间
 - � **Local Storage**: Data persists in `feeding_data.db` (SQLite), safe and private | 本地存储：数据保存在本地 SQLite 数据库中，安全隐私
