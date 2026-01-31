@@ -155,7 +155,7 @@ def delete_last_feeding() -> str:
     try:
         with sqlite3.connect(DB_FILE) as conn:
             c = conn.cursor()
-            c.execute('DELETE FROM feedings ORDER BY timestamp DESC LIMIT 1')
+            c.execute('DELETE FROM feedings WHERE id = (SELECT id FROM feedings ORDER BY timestamp DESC LIMIT 1)')
             conn.commit()
         
         logger.info("Deleted last feeding record")
