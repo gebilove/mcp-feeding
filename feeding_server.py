@@ -147,5 +147,22 @@ def get_recent_feedings(limit: int = 5) -> List[dict]:
         logger.error(f"Failed to get recent feedings: {e}")
         return []
 
+@mcp.tool()
+def delete_last_feeding() -> str:
+    """
+    Delete the last feeding record.
+    """
+    try:
+        with sqlite3.connect(DB_FILE) as conn:
+            c = conn.cursor()
+            c.execute('DELETE FROM feedings ORDER BY timestamp DESC LIMIT 1')
+            conn.commit()
+        
+        logger.info("Deleted last feeding record")
+        return "Successfully deleted last feeding record."
+    except Exception as e:
+        logger.error(f"Failed to delete last feeding: {e}")
+        return f"Error deleting last feeding: {str(e)}"
+
 if __name__ == "__main__":
     mcp.run(transport="stdio")
