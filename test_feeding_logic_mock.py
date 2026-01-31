@@ -1,6 +1,10 @@
 import sys
 from types import ModuleType
 import os
+import datetime
+
+# Set test DB path
+os.environ["FEEDING_DB_PATH"] = "test_feeding.db"
 
 # --- MOCKING INFRASTRUCTURE ---
 # 这是一个模拟模块，用来在没有安装 fastmcp 的情况下测试业务逻辑
@@ -17,6 +21,9 @@ class MockFastMCP:
             return func
         return decorator
     
+    def on_startup(self, func):
+        return func
+    
     def run(self, transport="stdio"):
         print(f"MockFastMCP '{self.name}' started on {transport}")
 
@@ -29,8 +36,8 @@ sys.modules["fastmcp"] = mock_fastmcp
 import feeding_server
 
 # Initialize/Reset DB for testing
-if os.path.exists("feeding_data.db"):
-    os.remove("feeding_data.db")
+if os.path.exists(feeding_server.DB_FILE):
+    os.remove(feeding_server.DB_FILE)
 feeding_server.init_db()
 
 print("=== 🧪 开始测试喂养服务逻辑 (Mock Mode) ===")
@@ -63,7 +70,40 @@ recent = feeding_server.get_recent_feedings(limit=5)
 for i, r in enumerate(recent):
     print(f"   [{i+1}] {r['amount_ml']}ml ({r['feeding_type']}) - {r['timestamp']}")
 
+print("\n--- 换尿布测试 ---")
+
+# Test 5: Record Diaper Change
+print("\n👉 测试 5: 记录换尿布 (pee)")
+res = feeding_server.record_diaper_change("pee")
+print(f"   结果: {res}")
+
+# Test 6: Record Diaper Change (poop)
+print("\n👉 测试 6: 记录换尿布 (poop)")
+feeding_server.record_diaper_change("poop")
+print(f"   已执行记录动作")
+
+# Test 7: Record Diaper Change (both)
+print("\n👉 测试 7: 记录换尿布 (both)")
+feeding_server.record_diaper_change("both")
+print(f"   已执行记录动作")
+
+# Test 8: Diaper Summary
+print("\n👉 测试 8: 获取今日尿布统计")
+diaper_summary = feeding_server.get_daily_diaper_summary()
+print(f"   统计结果: {diaper_summary}")
+
+if diaper_summary['total_changes'] == 3 and diaper_summary['counts'].get('pee') == 1:
+     print(f"\n✅ 验证通过: 尿布统计正确")
+else:
+     print(f"\n❌ 验证失败: 尿布统计错误 {diaper_summary}")
+
+# Test 9: Recent Diaper Changes
+print("\n👉 测试 9: 查看最近尿布记录")
+recent_diapers = feeding_server.get_recent_diaper_changes(limit=5)
+for i, r in enumerate(recent_diapers):
+    print(f"   [{i+1}] {r['diaper_type']} - {r['timestamp']}")
+
 # Cleanup
-if os.path.exists("feeding_data.db"):
-    os.remove("feeding_data.db")
+if os.path.exists(feeding_server.DB_FILE):
+    os.remove(feeding_server.DB_FILE)
 print("\n=== 测试完成 ===")
