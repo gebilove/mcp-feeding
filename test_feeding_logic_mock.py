@@ -37,12 +37,12 @@ print("=== 🧪 开始测试喂养服务逻辑 (Mock Mode) ===")
 
 # Test 1: Record Feeding
 print("\n👉 测试 1: 记录喂奶 (150ml)")
-res = feeding_server.record_feeding(150, "formula", "Morning feed")
+res = feeding_server.record_feeding(150, "formula")
 print(f"   结果: {res}")
 
 # Test 2: Record Another
 print("\n👉 测试 2: 记录第二次喂奶 (200ml)")
-feeding_server.record_feeding(200, "formula", "Lunch")
+feeding_server.record_feeding(200, "formula")
 print(f"   已执行记录动作")
 
 # Test 3: Daily Summary
