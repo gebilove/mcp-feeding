@@ -16,7 +16,6 @@ import os
 DEFAULT_DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "feeding_data.db")
 DB_FILE = os.getenv("FEEDING_DB_PATH", DEFAULT_DB_PATH)
 
-@mcp.on_startup
 def init_db(ctx=None):
     """Initialize the SQLite database with the feeding table."""
     try:
@@ -308,4 +307,6 @@ def delete_last_diaper_change() -> str:
         return f"Error deleting last diaper change: {str(e)}"
 
 if __name__ == "__main__":
+    # Initialize DB manually since @mcp.on_startup might not be available
+    init_db()
     mcp.run(transport="stdio")
