@@ -135,30 +135,57 @@ def get_daily_summary() -> dict:
         }
 
 @mcp.tool()
-def get_recent_feedings(limit: int = 1) -> List[dict]:
+def get_last_feeding_info() -> dict:
     """
-    Retrieve a list of the most recent feeding records.
-    
-    Args:
-        limit: The number of records to retrieve. Default is 1.
+    Get detailed information about the last feeding, including time elapsed since then.
+    Useful for answering "When was the last feeding?" or "How long has it been?".
     """
     try:
         with sqlite3.connect(DB_FILE) as conn:
-            conn.row_factory = sqlite3.Row  # To return dict-like objects
+            conn.row_factory = sqlite3.Row
             c = conn.cursor()
             
-            c.execute(
-                'SELECT id, timestamp, amount_ml, feeding_type FROM feedings ORDER BY timestamp DESC LIMIT ?',
-                (limit,),
-            )
-            rows = c.fetchall()
+            c.execute('SELECT timestamp, amount_ml, feeding_type FROM feedings ORDER BY timestamp DESC LIMIT 1')
+            row = c.fetchone()
             
-            feedings = [dict(row) for row in rows]
-        
-        return feedings
+            if not row:
+                return {"error": "No feeding records found."}
+            
+            last_feeding = dict(row)
+            timestamp_str = last_feeding['timestamp']
+            
+            # Calculate time difference
+            # Note: stored timestamp is conceptually Beijing Time string
+            try:
+                last_time = datetime.datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
+                beijing_now = datetime.datetime.utcnow() + datetime.timedelta(hours=8)
+                
+                diff = beijing_now - last_time
+                minutes_total = int(diff.total_seconds() / 60)
+                
+                hours = minutes_total // 60
+                mins = minutes_total % 60
+                
+                if hours > 0:
+                    desc = f"{hours}小时{mins}分钟前"
+                else:
+                    desc = f"{mins}分钟前"
+                    
+                last_feeding['minutes_since'] = minutes_total
+                last_feeding['description'] = desc
+                last_feeding['current_time'] = beijing_now.strftime('%Y-%m-%d %H:%M:%S')
+                
+            except Exception as e:
+                logger.error(f"Time calc error: {e}")
+                last_feeding['description'] = "时间计算错误"
+                
+            return last_feeding
+
     except Exception as e:
-        logger.error(f"Failed to get recent feedings: {e}")
-        return []
+        logger.error(f"Failed to get last feeding info: {e}")
+        return {"error": str(e)}
+
+
 
 @mcp.tool()
 def delete_last_feeding() -> str:
@@ -264,30 +291,54 @@ def get_daily_diaper_summary() -> dict:
         }
 
 @mcp.tool()
-def get_recent_diaper_changes(limit: int = 1) -> List[dict]:
+def get_last_diaper_change_info() -> dict:
     """
-    Retrieve a list of the most recent diaper change records.
-    
-    Args:
-        limit: The number of records to retrieve. Default is 1.
+    Get detailed information about the last diaper change, including time elapsed since then.
+    Useful for answering "When was the last diaper change?" or "How long has it been?".
     """
     try:
         with sqlite3.connect(DB_FILE) as conn:
             conn.row_factory = sqlite3.Row
             c = conn.cursor()
             
-            c.execute(
-                'SELECT id, timestamp, diaper_type FROM diaper_changes ORDER BY timestamp DESC LIMIT ?',
-                (limit,),
-            )
-            rows = c.fetchall()
+            c.execute('SELECT timestamp, diaper_type FROM diaper_changes ORDER BY timestamp DESC LIMIT 1')
+            row = c.fetchone()
             
-            changes = [dict(row) for row in rows]
-        
-        return changes
+            if not row:
+                return {"error": "No diaper change records found."}
+            
+            last_change = dict(row)
+            timestamp_str = last_change['timestamp']
+            
+            # Calculate time difference
+            try:
+                last_time = datetime.datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
+                beijing_now = datetime.datetime.utcnow() + datetime.timedelta(hours=8)
+                
+                diff = beijing_now - last_time
+                minutes_total = int(diff.total_seconds() / 60)
+                
+                hours = minutes_total // 60
+                mins = minutes_total % 60
+                
+                if hours > 0:
+                    desc = f"{hours}小时{mins}分钟前"
+                else:
+                    desc = f"{mins}分钟前"
+                    
+                last_change['minutes_since'] = minutes_total
+                last_change['description'] = desc
+                last_change['current_time'] = beijing_now.strftime('%Y-%m-%d %H:%M:%S')
+                
+            except Exception as e:
+                logger.error(f"Time calc error: {e}")
+                last_change['description'] = "时间计算错误"
+                
+            return last_change
+
     except Exception as e:
-        logger.error(f"Failed to get recent diaper changes: {e}")
-        return []
+        logger.error(f"Failed to get last diaper change info: {e}")
+        return {"error": str(e)}
 
 @mcp.tool()
 def delete_last_diaper_change() -> str:

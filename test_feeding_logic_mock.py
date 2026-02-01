@@ -4,7 +4,9 @@ import os
 import datetime
 
 # Set test DB path
-os.environ["FEEDING_DB_PATH"] = "test_feeding.db"
+# Set test DB path
+import os
+os.environ["FEEDING_DB_PATH"] = "/tmp/test_feeding.db"
 
 # --- MOCKING INFRASTRUCTURE ---
 # 这是一个模拟模块，用来在没有安装 fastmcp 的情况下测试业务逻辑
@@ -35,6 +37,8 @@ sys.modules["fastmcp"] = mock_fastmcp
 # Import the server code (which thinks it's importing real fastmcp)
 import feeding_server
 
+print(f"DEBUG: feeding_server.DB_FILE = {feeding_server.DB_FILE}")
+
 # Initialize/Reset DB for testing
 if os.path.exists(feeding_server.DB_FILE):
     os.remove(feeding_server.DB_FILE)
@@ -64,11 +68,6 @@ if summary['total_volume_ml'] == expected_vol:
 else:
     print(f"\n❌ 验证失败: 预期 {expected_vol}ml, 实际 {summary['total_volume_ml']}ml")
 
-# Test 4: Recent Feedings
-print("\n👉 测试 4: 查看最近记录")
-recent = feeding_server.get_recent_feedings(limit=5)
-for i, r in enumerate(recent):
-    print(f"   [{i+1}] {r['amount_ml']}ml ({r['feeding_type']}) - {r['timestamp']}")
 
 print("\n--- 换尿布测试 ---")
 
@@ -97,11 +96,14 @@ if diaper_summary['total_changes'] == 3 and diaper_summary['counts'].get('pee') 
 else:
      print(f"\n❌ 验证失败: 尿布统计错误 {diaper_summary}")
 
-# Test 9: Recent Diaper Changes
-print("\n👉 测试 9: 查看最近尿布记录")
-recent_diapers = feeding_server.get_recent_diaper_changes(limit=5)
-for i, r in enumerate(recent_diapers):
-    print(f"   [{i+1}] {r['diaper_type']} - {r['timestamp']}")
+# Test 9: Last Diaper Change Info
+print("\n👉 测试 9: 查看最后一次尿布信息")
+last_info = feeding_server.get_last_diaper_change_info()
+print(f"   结果: {last_info}")
+if 'minutes_since' in last_info:
+    print(f"   ✅ 验证通过: 成功获取时间差 ({last_info['description']})")
+else:
+    print(f"   ❌ 验证失败: {last_info}")
 
 # Cleanup
 if os.path.exists(feeding_server.DB_FILE):
